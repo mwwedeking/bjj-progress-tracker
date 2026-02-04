@@ -1,0 +1,13 @@
+This is a log of changes made to AI generated code:
+
+SQL:
+- Changed database name from "bjj_progression" to "bjj_progress_tracker"
+- Changed "rank" attribute to "currentBelt" because rank is a protected command in MySQL
+- Changed "length_seconds" to "length_minutes"
+
+DataProvider:
+- Had to import: import java.sql.Date;
+
+Refactoring:
+- Didn't catch that ChatGPT automatically assumed an attribute in the Roll Object to be lengthSeconds... 
+This had to be refactored across the Roll class and DataProvider to lengthMinutes etc.
