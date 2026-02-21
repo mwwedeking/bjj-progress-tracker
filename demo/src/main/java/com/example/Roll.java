@@ -139,19 +139,32 @@ public class Roll {
      */
     public void setTaps(List<TechniqueCount> taps) { this.taps = taps; }
 
-    // TODO: convenience methods for finding TechniqueCount in subs and taps by technique id, and incrementing counts for a given technique
-
-    // convenience: find TechniqueCount in subs by technique id
+    /**
+     * Find a TechniqueCount in the subs list for a given technique ID
+     * @param techniqueId the ID of the technique to find
+     * @return the TechniqueCount object if found, otherwise null
+     */
     public TechniqueCount findSubsForTechnique(long techniqueId) {
         for (TechniqueCount tc : subs) if (tc.getTechnique().getId() == techniqueId) return tc;
         return null;
     }
+
+    /**
+     * Find a TechniqueCount in the taps list for a given technique ID
+     * @param techniqueId the ID of the technique to find
+     * @return the TechniqueCount object if found, otherwise null
+     */
     public TechniqueCount findTapsForTechnique(long techniqueId) {
         for (TechniqueCount tc : taps) if (tc.getTechnique().getId() == techniqueId) return tc;
         return null;
     }
 
-    // increment utilities:
+    /**
+     * Increment the count of a technique used for submission or tap by a given amount. 
+     * If the technique does not exist in the respective list, it will be added with the initial count equal to the increment amount.
+     * @param technique the Technique object representing the technique to increment
+     * @param by the amount to increment the count by
+     */
     public void incrementSub(Technique technique, int by) {
         TechniqueCount tc = findSubsForTechnique(technique.getId());
         if (tc == null) {
@@ -161,6 +174,13 @@ public class Roll {
             tc.increment(by);
         }
     }
+
+    /**
+     * Increment the count of a technique used for submission or tap by a given amount. 
+     * If the technique does not exist in the respective list, it will be added with the initial count equal to the increment amount.
+     * @param technique the Technique object representing the technique to increment
+     * @param by the amount to increment the count by
+     */
     public void incrementTap(Technique technique, int by) {
         TechniqueCount tc = findTapsForTechnique(technique.getId());
         if (tc == null) {
@@ -171,6 +191,10 @@ public class Roll {
         }
     }
 
+    /**
+     * Override the toString method to provide a string representation of the Roll object, including its ID, length in minutes, training partner, number of rounds, and lists of submissions and taps.
+     * @return a string representation of the Roll object
+     */
     @Override
     public String toString() {
         return "Roll ID: " + id + ", Length (minutes): " + lengthMinutes + ", Partner: " + partner +", Number of Rounds: " + numRounds + ", Subs: " + subs + ", Taps: " + taps;

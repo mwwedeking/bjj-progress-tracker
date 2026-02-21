@@ -8,7 +8,7 @@ public class ExampleIncrement {
         provider.readAllTechniques().forEach(System.out::println);
 
         // Example database manipulation used for Project 1
-        // // Assume technique id 1 is Armbar and roll id 1 exists
+        // Assume technique id 1 is Armbar and roll id 1 exists
         // long rollId = 1;
         // long techniqueId = 1;
 

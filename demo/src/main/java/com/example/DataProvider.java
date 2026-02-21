@@ -5,6 +5,7 @@ import java.sql.*;
 import java.sql.Date;
 import java.time.LocalTime;
 import java.util.*;
+import io.github.cdimascio.dotenv.Dotenv;
 
 /**
  * The DataProvider class is responsible for managing the connection to the MySQL database 
@@ -15,10 +16,10 @@ import java.util.*;
  * allowing other parts of the application to interact with the database in a structured and organized manner.
  */
 public class DataProvider {
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/bjj_progress_tracker?serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "password";
-    // private static final String DB_PASSWORD = System.getenv("PASS");
+    private static final Dotenv dotenv = Dotenv.load();
+    private static final String DB_URL = dotenv.get("URL");
+    private static final String DB_USER = dotenv.get("USER");
+    private static final String DB_PASSWORD = dotenv.get("PASS"); 
 
     /**
      * Constructor for DataProvider class that loads the MySQL JDBC driver
