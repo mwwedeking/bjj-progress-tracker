@@ -93,7 +93,7 @@ public class DataProvider {
                     long rollId = rs.getLong(1);
                     r.setId(rollId);
                     // insert technique links if present
-                    upsertAllTechniqueCountsForRoll(rollId, r);
+                    saveAllTechniqueCountsForRoll(rollId, r);
                     return rollId;
                 }
             }
@@ -220,7 +220,7 @@ public class DataProvider {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Roll r = mapRoll(rs);
-                    getTechniqueCountsForRoll(r);
+                    getTechniqueCounts(r);
                     return r;
                 }
             }
@@ -240,7 +240,7 @@ public class DataProvider {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Roll r = mapRoll(rs);
-                getTechniqueCountsForRoll(r);
+                getTechniqueCounts(r);
                 out.add(r);
             }
         }
@@ -262,7 +262,7 @@ public class DataProvider {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Roll r = mapRoll(rs);
-                    getTechniqueCountsForRoll(r);
+                    getTechniqueCounts(r);
                     out.add(r);
                 }
             }
@@ -286,7 +286,7 @@ public class DataProvider {
             ps.setLong(4, r.getId());
             boolean ok = ps.executeUpdate() > 0;
             if (ok) {
-                upsertAllTechniqueCountsForRoll(r.getId(), r); // persist counters
+                saveAllTechniqueCountsForRoll(r.getId(), r); // persist counters
             }
             return ok;
         }
@@ -444,7 +444,7 @@ public class DataProvider {
      * @param tapsCount the number of taps to be upserted for the given technique and roll.
      * @throws SQLException if a database access error occurs
      */
-    public void upsertTechniqueCountForRoll(long rollId, long techniqueId, int subsCount, int tapsCount) throws SQLException {
+    public void saveTechniqueCount(long rollId, long techniqueId, int subsCount, int tapsCount) throws SQLException {
         String selectSql = "SELECT id FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
         String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count) VALUES (?, ?, ?, ?)";
         String updateSql = "UPDATE roll_technique_links SET subs_count = subs_count + ?, taps_count = taps_count + ? WHERE roll_id = ? AND technique_id = ?";
@@ -487,7 +487,7 @@ public class DataProvider {
      * @param r the Roll object containing the subs and taps lists to be upserted
      * @throws SQLException if a database access error occurs
      */
-    private void upsertAllTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
+    private void saveAllTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
         // gather per technique id the subs and taps
         Map<Long, Integer> subsMap = new HashMap<>();
         for (TechniqueCount tc : r.getSubs()) subsMap.put(tc.getTechnique().getId(), tc.getCount());
@@ -546,7 +546,7 @@ public class DataProvider {
      * @param roll the Roll object for which to populate the technique counts. The roll's ID must be set, and this method will fill the subs and taps lists based on the database data.
      * @throws SQLException if a database access error occurs
      */
-    private void getTechniqueCountsForRoll(Roll roll) throws SQLException {
+    private void getTechniqueCounts(Roll roll) throws SQLException {
         String sql = "SELECT rtl.*, t.name, t.position, t.num_finishes, t.num_taps " +
                      "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id " +
                      "WHERE rtl.roll_id = ?";
@@ -594,7 +594,7 @@ public class DataProvider {
      * @return true if the link was deleted, false otherwise
      * @throws SQLException if a database access error occurs
      */
-    public boolean deleteRollTechniqueLink(long rollId, long techniqueId) throws SQLException {
+    public boolean deleteTechniqueLink(long rollId, long techniqueId) throws SQLException {
         String sql = "DELETE FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, rollId);
