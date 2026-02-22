@@ -1,7 +1,7 @@
 package com.example;
 
 // ExampleIncrement.java
-public class ExampleIncrement {
+public class DataProviderHarness {
     public static void main(String[] args) throws Exception {
         DataProvider provider = new DataProvider();
 

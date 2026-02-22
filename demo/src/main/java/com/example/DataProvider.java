@@ -404,7 +404,8 @@ public class DataProvider {
     }
  
     /**
-    * Helper method to read all rolls associated with a specific session ID from the database, including their associated technique counts, and returns a list of Roll objects.
+    * Helper method to read all rolls associated with a specific session ID from the database, 
+    * including their associated technique counts, and returns a list of Roll objects.
     * @param sessionId the ID of the session for which to read the rolls
     * @return a list of Roll objects associated with the specified session ID
     * @throws SQLException if a database access error occurs

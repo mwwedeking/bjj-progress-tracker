@@ -1,6 +1,8 @@
-com\example\Session.class
 com\example\Technique.class
 com\example\DataProvider.class
+com\example\DataProviderHarness.class
 com\example\TechniqueCount.class
+com\example\BusinessManager.class
+com\example\BusinessManagerHarness.class
+com\example\Session.class
 com\example\Roll.class
-com\example\ExampleIncrement.class
