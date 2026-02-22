@@ -38,7 +38,294 @@ public class DataProvider {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    // ========== Technique CRUD ==========
+    // ======================================================================================================================================
+    //                                 Session CRUD
+    // ======================================================================================================================================
+
+    /**
+     * Creates a new session in the database along with its associated rolls and returns the generated session ID.
+     * @param s the Session object to be created, which may include a list of Roll objects to be associated with the session
+     * @return the generated ID of the created session, or -1 if the creation failed
+     * @throws SQLException if a database access error occurs
+     */
+    public long saveSession(Session s) throws SQLException {
+        String sql = "INSERT INTO sessions (session_date, session_time, is_gi, instructor, rank) VALUES (?, ?, ?, ?, ?)";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setDate(1, Date.valueOf(s.getDate()));
+            ps.setTime(2, Time.valueOf(s.getTime()));
+            ps.setBoolean(3, s.isGi());
+            ps.setString(4, s.getInstructor());
+            ps.setString(5, s.getRank());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    long id = rs.getLong(1);
+                    s.setId(id);
+                    // create rolls if any
+                    for (Roll r : s.getRolls()) {
+                        r.setId(saveRollWithSession(id, r)); // sets id
+                    }
+                    return id;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Helper method to create a roll associated with a specific session. 
+     * This method inserts the roll into the database and also handles the insertion of technique links for the roll if they are present.
+     * @param sessionId the ID of the session to which the roll is associated
+     * @param r the Roll object to be created, which may include lists of TechniqueCount objects for subs and taps
+     * @return the generated ID of the created roll, or -1 if the creation failed
+     * @throws SQLException if a database access error occurs
+     */
+    private long saveRollWithSession(long sessionId, Roll r) throws SQLException {
+        String sql = "INSERT INTO rolls (session_id, length_minutes, partner, num_rounds) VALUES (?, ?, ?, ?)";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, sessionId);
+            ps.setInt(2, r.getLengthMinutes());
+            ps.setString(3, r.getPartner());
+            ps.setInt(4, r.getNumRounds());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    long rollId = rs.getLong(1);
+                    r.setId(rollId);
+                    // insert technique links if present
+                    upsertAllTechniqueCountsForRoll(rollId, r);
+                    return rollId;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Reads a session from the database by its ID, including its associated rolls and their technique counts, and returns a Session object.
+     * @param id the ID of the session to be read
+     * @return the Session object if found, or null if not found
+     * @throws SQLException if a database access error occurs
+     */
+    public Session getSessionById(long id) throws SQLException {
+        String sql = "SELECT * FROM sessions WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Session s = mapSession(rs);
+                    s.setRolls(getRollsForSession(id));
+                    return s;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Reads all sessions from the database, including their associated rolls and technique counts, and returns a list of Session objects.
+     * @return a list of Session objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Session> getAllSessions() throws SQLException {
+        List<Session> out = new ArrayList<>();
+        String sql = "SELECT * FROM sessions ORDER BY session_date DESC";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Session s = mapSession(rs);
+                s.setRolls(getRollsForSession(s.getId()));
+                out.add(s);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Updates an existing session in the database with the values from the provided Session object.
+     * @param s the Session object to be updated
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean updateSession(Session s) throws SQLException {
+        String sql = "UPDATE sessions SET session_date = ?, session_time = ?, is_gi = ?, instructor = ?, rank = ? WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(s.getDate()));
+            ps.setTime(2, Time.valueOf(s.getTime()));
+            ps.setBoolean(3, s.isGi());
+            ps.setString(4, s.getInstructor());
+            ps.setString(5, s.getRank());
+            ps.setLong(6, s.getId());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Deletes a session from the database by its ID. This method also deletes all rolls associated with the session due to the ON DELETE CASCADE constraint in the database schema.
+     * @param id the ID of the session to be deleted
+     * @return true if the deletion was successful, false otherwise
+     */
+    public boolean deleteSession(long id) throws SQLException {
+        String sql = "DELETE FROM sessions WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Helper method to map a ResultSet row to a Session object. This method is used internally to convert database rows into Session objects when reading from the database.
+     * @param rs the ResultSet containing the session data to be mapped
+     * @return a Session object representing the data in the ResultSet row
+     * @throws SQLException if a database access error occurs while reading from the ResultSet
+     */
+    private Session mapSession(ResultSet rs) throws SQLException {
+        Session s = new Session();
+        s.setId(rs.getLong("id"));
+        s.setDate(rs.getDate("session_date").toLocalDate());
+        Time t = rs.getTime("session_time");
+        s.setTime(t != null ? t.toLocalTime() : LocalTime.MIDNIGHT);
+        s.setGi(rs.getBoolean("is_gi"));
+        s.setInstructor(rs.getString("instructor"));
+        s.setRank(rs.getString("rank"));
+        return s;
+    }
+
+    // ======================================================================================================================================
+    //                              Roll CRUD
+    // ======================================================================================================================================
+
+    /**
+     * Creates a new roll in the database associated with a specific session. 
+     * This method is a helper that calls createRollWithSession to handle the insertion of the roll and its technique links.
+     * @param sessionId the ID of the session to which the roll is associated
+     * @param r the Roll object to be saved, which may include lists of TechniqueCount objects for subs and taps
+     * @return the generated ID of the saved roll, or -1 if the save failed
+     * @throws SQLException if a database access error occurs
+     */
+    public long saveRoll(long sessionId, Roll r) throws SQLException {
+        return saveRollWithSession(sessionId, r);
+    }
+
+    /**
+     * Reads a roll from the database by its ID, including its associated technique counts, and returns a Roll object.
+     * @param id the ID of the roll to be read
+     * @return the Roll object if found, or null if not found
+     * @throws SQLException if a database access error occurs
+     */
+    public Roll getRollById(long id) throws SQLException {
+        String sql = "SELECT * FROM rolls WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Roll r = mapRoll(rs);
+                    getTechniqueCountsForRoll(r);
+                    return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Reads all rolls from the database, including their associated technique counts, and returns a list of Roll objects.
+     * @return a list of Roll objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<Roll> getAllRolls() throws SQLException {
+        List<Roll> out = new ArrayList<>();
+        String sql = "SELECT * FROM rolls ORDER BY created_at DESC";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Roll r = mapRoll(rs);
+                getTechniqueCountsForRoll(r);
+                out.add(r);
+            }
+        }
+        return out;
+    }
+
+    /**
+    * Helper method to read all rolls associated with a specific session ID from the database, 
+    * including their associated technique counts, and returns a list of Roll objects.
+    * @param sessionId the ID of the session for which to read the rolls
+    * @return a list of Roll objects associated with the specified session ID
+    * @throws SQLException if a database access error occurs
+    */
+    private List<Roll> getRollsForSession(long sessionId) throws SQLException {
+        List<Roll> out = new ArrayList<>();
+        String sql = "SELECT * FROM rolls WHERE session_id = ? ORDER BY created_at";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, sessionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Roll r = mapRoll(rs);
+                    getTechniqueCountsForRoll(r);
+                    out.add(r);
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Updates an existing roll in the database with the values from the provided Roll object. 
+     * This method also updates the associated technique counts for the roll.
+     * @param r the Roll object with updated values, including its ID which identifies the roll to be updated in the database
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean updateRoll(Roll r) throws SQLException {
+        String sql = "UPDATE rolls SET length_minutes = ?, partner = ?, num_rounds = ? WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, r.getLengthMinutes());
+            ps.setString(2, r.getPartner());
+            ps.setInt(3, r.getNumRounds());
+            ps.setLong(4, r.getId());
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) {
+                upsertAllTechniqueCountsForRoll(r.getId(), r); // persist counters
+            }
+            return ok;
+        }
+    }
+
+    /**
+     * Deletes a roll from the database by its ID. 
+     * This method also deletes all technique links associated with the roll due to the ON DELETE CASCADE constraint in the database schema.
+     * @param id the ID of the roll to be deleted
+     * @return true if the deletion was successful, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean deleteRoll(long id) throws SQLException {
+        String sql = "DELETE FROM rolls WHERE id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Helper method to map a ResultSet row to a Roll object. 
+     * This method is used internally to convert database rows into Roll objects when reading from the database.
+     * @param rs the ResultSet containing the roll data to be mapped
+     * @return a Roll object representing the data in the ResultSet row
+     * @throws SQLException if a database access error occurs while reading from the ResultSet
+     */
+    private Roll mapRoll(ResultSet rs) throws SQLException {
+        Roll r = new Roll();
+        r.setId(rs.getLong("id"));
+        r.setLengthMinutes(rs.getInt("length_minutes"));
+        r.setPartner(rs.getString("partner"));
+        r.setNumRounds(rs.getInt("num_rounds"));
+        return r;
+    }
+
+    // ======================================================================================================================================
+    //                             Technique CRUD
+    // ======================================================================================================================================
 
     /**
      * Creates a new technique in the database and returns the generated ID.
@@ -46,7 +333,7 @@ public class DataProvider {
      * @return the generated ID of the technique
      * @throws SQLException if a database access error occurs
      */
-    public long createTechnique(Technique t) throws SQLException {
+    public long saveTechnique(Technique t) throws SQLException {
         String sql = "INSERT INTO techniques (name, position, num_finishes, num_taps) VALUES (?, ?, ?, ?)";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, t.getName());
@@ -71,7 +358,7 @@ public class DataProvider {
      * @return a Technique object representing the technique with the specified ID, or null if not found
      * @throws SQLException if a database access error occurs
      */
-    public Technique readTechniqueById(long id) throws SQLException {
+    public Technique getTechniqueById(long id) throws SQLException {
         String sql = "SELECT * FROM techniques WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -87,7 +374,7 @@ public class DataProvider {
      * @return a list of Technique objects representing all techniques in the database
      * @throws SQLException if a database access error occurs
      */
-    public List<Technique> readAllTechniques() throws SQLException {
+    public List<Technique> getAllTechniques() throws SQLException {
         List<Technique> list = new ArrayList<>();
         String sql = "SELECT * FROM techniques";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
@@ -145,313 +432,51 @@ public class DataProvider {
         return t;
     }
 
-    // ========== Session CRUD (and read rolls) ==========
+    // ======================================================================================================================================
+    //                        Technique Counts CRUD
+    // ======================================================================================================================================
 
     /**
-     * Creates a new session in the database along with its associated rolls and returns the generated session ID.
-     * @param s the Session object to be created, which may include a list of Roll objects to be associated with the session
-     * @return the generated ID of the created session, or -1 if the creation failed
+     * Helper method to upsert (insert or update) the technique counts for a single technique associated with a given roll. 
+     * @param rollId the ID of the roll for which to upsert the technique count. This ID must correspond to an existing roll in the database.
+     * @param techniqueId the ID of the technique for which to upsert the count. This ID must correspond to an existing technique in the database.
+     * @param subsCount the number of subs to be upserted for the given technique and roll.
+     * @param tapsCount the number of taps to be upserted for the given technique and roll.
      * @throws SQLException if a database access error occurs
      */
-    public long createSession(Session s) throws SQLException {
-        String sql = "INSERT INTO sessions (session_date, session_time, is_gi, instructor, rank) VALUES (?, ?, ?, ?, ?)";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setDate(1, Date.valueOf(s.getDate()));
-            ps.setTime(2, Time.valueOf(s.getTime()));
-            ps.setBoolean(3, s.isGi());
-            ps.setString(4, s.getInstructor());
-            ps.setString(5, s.getRank());
-            ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    long id = rs.getLong(1);
-                    s.setId(id);
-                    // create rolls if any
-                    for (Roll r : s.getRolls()) {
-                        r.setId(createRollWithSession(id, r)); // sets id
+    public void upsertTechniqueCountForRoll(long rollId, long techniqueId, int subsCount, int tapsCount) throws SQLException {
+        String selectSql = "SELECT id FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
+        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count) VALUES (?, ?, ?, ?)";
+        String updateSql = "UPDATE roll_technique_links SET subs_count = subs_count + ?, taps_count = taps_count + ? WHERE roll_id = ? AND technique_id = ?";
+        try (Connection c = getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement psSelect = c.prepareStatement(selectSql);
+                 PreparedStatement psInsert = c.prepareStatement(insertSql);
+                 PreparedStatement psUpdate = c.prepareStatement(updateSql)) {
+
+                psSelect.setLong(1, rollId);
+                psSelect.setLong(2, techniqueId);
+                try (ResultSet rs = psSelect.executeQuery()) {
+                    if (rs.next()) { // update - add to existing counters
+                        psUpdate.setInt(1, subsCount);
+                        psUpdate.setInt(2, tapsCount);
+                        psUpdate.setLong(3, rollId);
+                        psUpdate.setLong(4, techniqueId);
+                        psUpdate.executeUpdate();
+                    } else { // insert with provided absolute counters
+                        psInsert.setLong(1, rollId);
+                        psInsert.setLong(2, techniqueId);
+                        psInsert.setInt(3, subsCount);
+                        psInsert.setInt(4, tapsCount);
+                        psInsert.executeUpdate();
                     }
-                    return id;
                 }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Helper method to create a roll associated with a specific session. 
-     * This method inserts the roll into the database and also handles the insertion of technique links for the roll if they are present.
-     * @param sessionId the ID of the session to which the roll is associated
-     * @param r the Roll object to be created, which may include lists of TechniqueCount objects for subs and taps
-     * @return the generated ID of the created roll, or -1 if the creation failed
-     * @throws SQLException if a database access error occurs
-     */
-    private long createRollWithSession(long sessionId, Roll r) throws SQLException {
-        String sql = "INSERT INTO rolls (session_id, length_minutes, partner, num_rounds) VALUES (?, ?, ?, ?)";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setLong(1, sessionId);
-            ps.setInt(2, r.getLengthMinutes());
-            ps.setString(3, r.getPartner());
-            ps.setInt(4, r.getNumRounds());
-            ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    long rollId = rs.getLong(1);
-                    r.setId(rollId);
-                    // insert technique links if present
-                    upsertTechniqueCountsForRoll(rollId, r);
-                    return rollId;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Reads a session from the database by its ID, including its associated rolls and their technique counts, and returns a Session object.
-     * @param id the ID of the session to be read
-     * @return the Session object if found, or null if not found
-     * @throws SQLException if a database access error occurs
-     */
-    public Session readSessionById(long id) throws SQLException {
-        String sql = "SELECT * FROM sessions WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Session s = mapSession(rs);
-                    s.setRolls(readRollsForSession(id));
-                    return s;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Reads all sessions from the database, including their associated rolls and technique counts, and returns a list of Session objects.
-     * @return a list of Session objects
-     * @throws SQLException if a database access error occurs
-     */
-    public List<Session> readAllSessions() throws SQLException {
-        List<Session> out = new ArrayList<>();
-        String sql = "SELECT * FROM sessions ORDER BY session_date DESC";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Session s = mapSession(rs);
-                s.setRolls(readRollsForSession(s.getId()));
-                out.add(s);
-            }
-        }
-        return out;
-    }
-
-    /**
-     * Updates an existing session in the database with the values from the provided Session object.
-     * @param s the Session object to be updated
-     * @return true if the update was successful, false otherwise
-     * @throws SQLException if a database access error occurs
-     */
-    public boolean updateSession(Session s) throws SQLException {
-        String sql = "UPDATE sessions SET session_date = ?, session_time = ?, is_gi = ?, instructor = ?, rank = ? WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setDate(1, Date.valueOf(s.getDate()));
-            ps.setTime(2, Time.valueOf(s.getTime()));
-            ps.setBoolean(3, s.isGi());
-            ps.setString(4, s.getInstructor());
-            ps.setString(5, s.getRank());
-            ps.setLong(6, s.getId());
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    /**
-     * Deletes a session from the database by its ID. This method also deletes all rolls associated with the session due to the ON DELETE CASCADE constraint in the database schema.
-     * @param id the ID of the session to be deleted
-     * @return true if the deletion was successful, false otherwise
-     */
-    public boolean deleteSession(long id) throws SQLException {
-        String sql = "DELETE FROM sessions WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    /**
-     * Helper method to map a ResultSet row to a Session object. This method is used internally to convert database rows into Session objects when reading from the database.
-     * @param rs the ResultSet containing the session data to be mapped
-     * @return a Session object representing the data in the ResultSet row
-     * @throws SQLException if a database access error occurs while reading from the ResultSet
-     */
-    private Session mapSession(ResultSet rs) throws SQLException {
-        Session s = new Session();
-        s.setId(rs.getLong("id"));
-        s.setDate(rs.getDate("session_date").toLocalDate());
-        Time t = rs.getTime("session_time");
-        s.setTime(t != null ? t.toLocalTime() : LocalTime.MIDNIGHT);
-        s.setGi(rs.getBoolean("is_gi"));
-        s.setInstructor(rs.getString("instructor"));
-        s.setRank(rs.getString("rank"));
-        return s;
-    }
-
-    // ========== Roll CRUD ==========
-
-    /**
-     * Creates a new roll in the database associated with a specific session. 
-     * This method is a helper that calls createRollWithSession to handle the insertion of the roll and its technique links.
-     * @param sessionId the ID of the session to which the roll is associated
-     * @param r the Roll object to be created, which may include lists of TechniqueCount objects for subs and taps
-     * @return the generated ID of the created roll, or -1 if the creation failed
-     * @throws SQLException if a database access error occurs
-     */
-    public long createRoll(long sessionId, Roll r) throws SQLException {
-        return createRollWithSession(sessionId, r);
-    }
-
-    /**
-     * Reads a roll from the database by its ID, including its associated technique counts, and returns a Roll object.
-     * @param id the ID of the roll to be read
-     * @return the Roll object if found, or null if not found
-     * @throws SQLException if a database access error occurs
-     */
-    public Roll readRollById(long id) throws SQLException {
-        String sql = "SELECT * FROM rolls WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Roll r = mapRoll(rs);
-                    populateTechniqueCountsForRoll(r);
-                    return r;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Reads all rolls from the database, including their associated technique counts, and returns a list of Roll objects.
-     * @return a list of Roll objects
-     * @throws SQLException if a database access error occurs
-     */
-    public List<Roll> readAllRolls() throws SQLException {
-        List<Roll> out = new ArrayList<>();
-        String sql = "SELECT * FROM rolls ORDER BY created_at DESC";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Roll r = mapRoll(rs);
-                populateTechniqueCountsForRoll(r);
-                out.add(r);
-            }
-        }
-        return out;
-    }
-
-    /**
-     * Updates an existing roll in the database with the values from the provided Roll object. 
-     * This method also updates the associated technique counts for the roll.
-     * @param r the Roll object with updated values, including its ID which identifies the roll to be updated in the database
-     * @return true if the update was successful, false otherwise
-     * @throws SQLException if a database access error occurs
-     */
-    public boolean updateRoll(Roll r) throws SQLException {
-        String sql = "UPDATE rolls SET length_minutes = ?, partner = ?, num_rounds = ? WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, r.getLengthMinutes());
-            ps.setString(2, r.getPartner());
-            ps.setInt(3, r.getNumRounds());
-            ps.setLong(4, r.getId());
-            boolean ok = ps.executeUpdate() > 0;
-            if (ok) {
-                upsertTechniqueCountsForRoll(r.getId(), r); // persist counters
-            }
-            return ok;
-        }
-    }
-
-    /**
-     * Deletes a roll from the database by its ID. 
-     * This method also deletes all technique links associated with the roll due to the ON DELETE CASCADE constraint in the database schema.
-     * @param id the ID of the roll to be deleted
-     * @return true if the deletion was successful, false otherwise
-     * @throws SQLException if a database access error occurs
-     */
-    public boolean deleteRoll(long id) throws SQLException {
-        String sql = "DELETE FROM rolls WHERE id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    /**
-     * Helper method to map a ResultSet row to a Roll object. 
-     * This method is used internally to convert database rows into Roll objects when reading from the database.
-     * @param rs the ResultSet containing the roll data to be mapped
-     * @return a Roll object representing the data in the ResultSet row
-     * @throws SQLException if a database access error occurs while reading from the ResultSet
-     */
-    private Roll mapRoll(ResultSet rs) throws SQLException {
-        Roll r = new Roll();
-        r.setId(rs.getLong("id"));
-        r.setLengthMinutes(rs.getInt("length_minutes"));
-        r.setPartner(rs.getString("partner"));
-        r.setNumRounds(rs.getInt("num_rounds"));
-        return r;
-    }
- 
-    /**
-    * Helper method to read all rolls associated with a specific session ID from the database, 
-    * including their associated technique counts, and returns a list of Roll objects.
-    * @param sessionId the ID of the session for which to read the rolls
-    * @return a list of Roll objects associated with the specified session ID
-    * @throws SQLException if a database access error occurs
-    */
-    private List<Roll> readRollsForSession(long sessionId) throws SQLException {
-        List<Roll> out = new ArrayList<>();
-        String sql = "SELECT * FROM rolls WHERE session_id = ? ORDER BY created_at";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, sessionId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Roll r = mapRoll(rs);
-                    populateTechniqueCountsForRoll(r);
-                    out.add(r);
-                }
-            }
-        }
-        return out;
-    }
-
-    // ========== roll_technique_links operations ==========
-
-    /**
-     * Helper method to populate the subs and taps lists of a Roll object with TechniqueCount objects based on the data in the roll_technique_links table for the given roll.
-     * @param roll the Roll object for which to populate the technique counts. The roll's ID must be set, and this method will fill the subs and taps lists based on the database data.
-     * @throws SQLException if a database access error occurs
-     */
-    private void populateTechniqueCountsForRoll(Roll roll) throws SQLException {
-        String sql = "SELECT rtl.*, t.name, t.position, t.num_finishes, t.num_taps " +
-                     "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id " +
-                     "WHERE rtl.roll_id = ?";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, roll.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Technique t = new Technique();
-                    t.setId(rs.getLong("technique_id"));
-                    t.setName(rs.getString("name"));
-                    t.setPosition(rs.getString("position"));
-                    t.setNumFinishes(rs.getInt("num_finishes"));
-                    t.setNumTaps(rs.getInt("num_taps"));
-                    int subs = rs.getInt("subs_count");
-                    int taps = rs.getInt("taps_count");
-                    if (subs > 0) roll.getSubs().add(new TechniqueCount(t, subs));
-                    if (taps > 0) roll.getTaps().add(new TechniqueCount(t, taps));
-                }
+                c.commit();
+            } catch (SQLException ex) {
+                c.rollback();
+                throw ex;
+            } finally {
+                c.setAutoCommit(true);
             }
         }
     }
@@ -462,7 +487,7 @@ public class DataProvider {
      * @param r the Roll object containing the subs and taps lists to be upserted
      * @throws SQLException if a database access error occurs
      */
-    private void upsertTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
+    private void upsertAllTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
         // gather per technique id the subs and taps
         Map<Long, Integer> subsMap = new HashMap<>();
         for (TechniqueCount tc : r.getSubs()) subsMap.put(tc.getTechnique().getId(), tc.getCount());
@@ -517,46 +542,29 @@ public class DataProvider {
     }
 
     /**
-     * Helper method to upsert (insert or update) the technique counts for a single technique associated with a given roll. 
-     * @param rollId the ID of the roll for which to upsert the technique count. This ID must correspond to an existing roll in the database.
-     * @param techniqueId the ID of the technique for which to upsert the count. This ID must correspond to an existing technique in the database.
-     * @param subsCount the number of subs to be upserted for the given technique and roll.
-     * @param tapsCount the number of taps to be upserted for the given technique and roll.
+     * Helper method to populate the subs and taps lists of a Roll object with TechniqueCount objects based on the data in the roll_technique_links table for the given roll.
+     * @param roll the Roll object for which to populate the technique counts. The roll's ID must be set, and this method will fill the subs and taps lists based on the database data.
      * @throws SQLException if a database access error occurs
      */
-    public void upsertSingleTechniqueCount(long rollId, long techniqueId, int subsCount, int tapsCount) throws SQLException {
-        String selectSql = "SELECT id FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
-        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count) VALUES (?, ?, ?, ?)";
-        String updateSql = "UPDATE roll_technique_links SET subs_count = subs_count + ?, taps_count = taps_count + ? WHERE roll_id = ? AND technique_id = ?";
-        try (Connection c = getConnection()) {
-            c.setAutoCommit(false);
-            try (PreparedStatement psSelect = c.prepareStatement(selectSql);
-                 PreparedStatement psInsert = c.prepareStatement(insertSql);
-                 PreparedStatement psUpdate = c.prepareStatement(updateSql)) {
-
-                psSelect.setLong(1, rollId);
-                psSelect.setLong(2, techniqueId);
-                try (ResultSet rs = psSelect.executeQuery()) {
-                    if (rs.next()) { // update - add to existing counters
-                        psUpdate.setInt(1, subsCount);
-                        psUpdate.setInt(2, tapsCount);
-                        psUpdate.setLong(3, rollId);
-                        psUpdate.setLong(4, techniqueId);
-                        psUpdate.executeUpdate();
-                    } else { // insert with provided absolute counters
-                        psInsert.setLong(1, rollId);
-                        psInsert.setLong(2, techniqueId);
-                        psInsert.setInt(3, subsCount);
-                        psInsert.setInt(4, tapsCount);
-                        psInsert.executeUpdate();
-                    }
+    private void getTechniqueCountsForRoll(Roll roll) throws SQLException {
+        String sql = "SELECT rtl.*, t.name, t.position, t.num_finishes, t.num_taps " +
+                     "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id " +
+                     "WHERE rtl.roll_id = ?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, roll.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Technique t = new Technique();
+                    t.setId(rs.getLong("technique_id"));
+                    t.setName(rs.getString("name"));
+                    t.setPosition(rs.getString("position"));
+                    t.setNumFinishes(rs.getInt("num_finishes"));
+                    t.setNumTaps(rs.getInt("num_taps"));
+                    int subs = rs.getInt("subs_count");
+                    int taps = rs.getInt("taps_count");
+                    if (subs > 0) roll.getSubs().add(new TechniqueCount(t, subs));
+                    if (taps > 0) roll.getTaps().add(new TechniqueCount(t, taps));
                 }
-                c.commit();
-            } catch (SQLException ex) {
-                c.rollback();
-                throw ex;
-            } finally {
-                c.setAutoCommit(true);
             }
         }
     }
@@ -569,7 +577,7 @@ public class DataProvider {
      * @return true if the technique was updated, false otherwise
      * @throws SQLException if a database access error occurs
      */
-    public boolean updateTechniqueAggregates(long techniqueId, int newNumFinishes, int newNumTaps) throws SQLException {
+    public boolean updateTechniqueCounts(long techniqueId, int newNumFinishes, int newNumTaps) throws SQLException {
         String sql = "UPDATE techniques SET num_finishes = ?, num_taps = ? WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, newNumFinishes);
@@ -595,7 +603,9 @@ public class DataProvider {
         }
     }
 
-    // ========== additional helpers ==========
+    // ======================================================================================================================================
+    //                        Additional Helper Methods
+    // ======================================================================================================================================
 
     /**
      * Helper method to fetch a map of technique IDs to TechniqueCount objects for the subs associated with a given roll.
