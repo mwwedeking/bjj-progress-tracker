@@ -25,8 +25,8 @@ VALUES
 -- roll_technique_links: e.g., in roll 1 executed Armbar twice and tapped once
 INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count)
 VALUES
-  (1, 1, 2, 1),  -- Roll 1: Armbar subs=2, taps=1
-  (1, 2, 1, 0),  -- Roll 1: Triangle subs=1
-  (2, 3, 0, 0),  -- Roll 2: saw back control but no subs/taps
-  (3, 1, 1, 0),  -- Roll 3: Armbar attempted once
-  (3, 4, 0, 1);  -- Roll 3: Kimura tapped once
+  (1, 1, 2),  -- Roll 1: Armbar subs=2, taps=1
+  (1, 2, 1),  -- Roll 1: Triangle subs=1
+  (2, 3, 0),  -- Roll 2: saw back control but no subs/taps
+  (3, 1, 1),  -- Roll 3: Armbar attempted once
+  (3, 4, 0);  -- Roll 3: Kimura tapped once

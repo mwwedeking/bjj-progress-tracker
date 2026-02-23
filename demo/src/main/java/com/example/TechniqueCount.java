@@ -8,6 +8,7 @@ package com.example;
  * This class serves as a data model for tracking the usage of techniques in the BJJ Progress Tracker application.
  */
 public class TechniqueCount {
+    private long rollID;
     private Technique technique;
     private int count;
 
@@ -21,9 +22,26 @@ public class TechniqueCount {
      * @param technique the Technique object representing the specific technique being tracked
      * @param count the count of how many times the technique was used in a particular context (e.g., during a roll)
      */
-    public TechniqueCount(Technique technique, int count) {
+    public TechniqueCount(long rollID, Technique technique, int count) {
+        this.rollID = rollID;
         this.technique = technique;
         this.count = count;
+    }
+
+    /**
+     * Get the rollID of the TechniqueCount object
+     * @return the rollID of the TechniqueCount object
+     */
+    public long getRollID() {
+        return rollID;
+    }
+
+    /**
+     * Set the rollID of the TechniqueCount object
+     * @param rollID the rollID the TechniqueCount object will be set to
+     */
+    public void setRollID(long rollID) {
+        this.rollID = rollID;
     }
 
     /**

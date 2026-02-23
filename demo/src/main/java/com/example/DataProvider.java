@@ -444,10 +444,10 @@ public class DataProvider {
      * @param tapsCount the number of taps to be upserted for the given technique and roll.
      * @throws SQLException if a database access error occurs
      */
-    public void saveTechniqueCount(long rollId, long techniqueId, int subsCount, int tapsCount) throws SQLException {
+    public void saveTechniqueCount(long rollId, long techniqueId, int count) throws SQLException {
         String selectSql = "SELECT id FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
-        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count) VALUES (?, ?, ?, ?)";
-        String updateSql = "UPDATE roll_technique_links SET subs_count = subs_count + ?, taps_count = taps_count + ? WHERE roll_id = ? AND technique_id = ?";
+        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, count) VALUES (?, ?, ?)";
+        String updateSql = "UPDATE roll_technique_links SET count = count + ? WHERE roll_id = ? AND technique_id = ?";
         try (Connection c = getConnection()) {
             c.setAutoCommit(false);
             try (PreparedStatement psSelect = c.prepareStatement(selectSql);
@@ -458,16 +458,14 @@ public class DataProvider {
                 psSelect.setLong(2, techniqueId);
                 try (ResultSet rs = psSelect.executeQuery()) {
                     if (rs.next()) { // update - add to existing counters
-                        psUpdate.setInt(1, subsCount);
-                        psUpdate.setInt(2, tapsCount);
-                        psUpdate.setLong(3, rollId);
-                        psUpdate.setLong(4, techniqueId);
+                        psUpdate.setInt(1, count);
+                        psUpdate.setLong(2, rollId);
+                        psUpdate.setLong(3, techniqueId);
                         psUpdate.executeUpdate();
                     } else { // insert with provided absolute counters
                         psInsert.setLong(1, rollId);
                         psInsert.setLong(2, techniqueId);
-                        psInsert.setInt(3, subsCount);
-                        psInsert.setInt(4, tapsCount);
+                        psInsert.setInt(3, count);
                         psInsert.executeUpdate();
                     }
                 }
@@ -500,8 +498,8 @@ public class DataProvider {
         techniqueIds.addAll(tapsMap.keySet());
 
         String selectSql = "SELECT id FROM roll_technique_links WHERE roll_id = ? AND technique_id = ?";
-        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, subs_count, taps_count) VALUES (?, ?, ?, ?)";
-        String updateSql = "UPDATE roll_technique_links SET subs_count = ?, taps_count = ? WHERE roll_id = ? AND technique_id = ?";
+        String insertSql = "INSERT INTO roll_technique_links (roll_id, technique_id, count) VALUES (?, ?, ?, ?)";
+        String updateSql = "UPDATE roll_technique_links SET count = ? = ? WHERE roll_id = ? AND technique_id = ?";
 
         try (Connection c = getConnection()) {
             c.setAutoCommit(false);
@@ -542,7 +540,7 @@ public class DataProvider {
     }
 
     /**
-     * Helper method to populate the subs and taps lists of a Roll object with TechniqueCount objects based on the data in the roll_technique_links table for the given roll.
+     * Helper method to populate the subs and taps lists of a Roll object with  objects based on the data in the roll_technique_links table for the given roll.
      * @param roll the Roll object for which to populate the technique counts. The roll's ID must be set, and this method will fill the subs and taps lists based on the database data.
      * @throws SQLException if a database access error occurs
      */
@@ -560,10 +558,9 @@ public class DataProvider {
                     t.setPosition(rs.getString("position"));
                     t.setNumFinishes(rs.getInt("num_finishes"));
                     t.setNumTaps(rs.getInt("num_taps"));
-                    int subs = rs.getInt("subs_count");
-                    int taps = rs.getInt("taps_count");
-                    if (subs > 0) roll.getSubs().add(new TechniqueCount(t, subs));
-                    if (taps > 0) roll.getTaps().add(new TechniqueCount(t, taps));
+                    int count = rs.getInt("count");
+                    long rollID = rs.getLong("roll_id");
+                    if (count > 0) roll.getSubs().add(new TechniqueCount(rollID, t, count));
                 }
             }
         }
@@ -613,27 +610,27 @@ public class DataProvider {
      * @return a map of technique IDs to TechniqueCount objects for the subs associated with the given roll
      * @throws SQLException if a database access error occurs
      */
-    public Map<Long, TechniqueCount> fetchSubsMapForRoll(long rollId) throws SQLException {
-        Map<Long, TechniqueCount> map = new HashMap<>();
-        String sql = "SELECT rtl.technique_id, rtl.subs_count, t.name, t.position, t.num_finishes, t.num_taps " +
-                     "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id WHERE rtl.roll_id = ? AND rtl.subs_count > 0";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, rollId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Technique t = new Technique();
-                    t.setId(rs.getLong("technique_id"));
-                    t.setName(rs.getString("name"));
-                    t.setPosition(rs.getString("position"));
-                    t.setNumFinishes(rs.getInt("num_finishes"));
-                    t.setNumTaps(rs.getInt("num_taps"));
-                    int subs = rs.getInt("subs_count");
-                    map.put(t.getId(), new TechniqueCount(t, subs));
-                }
-            }
-        }
-        return map;
-    }
+    // public Map<Long, TechniqueCount> fetchSubsMapForRoll(long rollId) throws SQLException {
+    //     Map<Long, TechniqueCount> map = new HashMap<>();
+    //     String sql = "SELECT rtl.technique_id, rtl.count, t.name, t.position, t.num_finishes, t.num_taps " +
+    //                  "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id WHERE rtl.roll_id = ? AND rtl.count > 0";
+    //     try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+    //         ps.setLong(1, rollId);
+    //         try (ResultSet rs = ps.executeQuery()) {
+    //             while (rs.next()) {
+    //                 Technique t = new Technique();
+    //                 t.setId(rs.getLong("technique_id"));
+    //                 t.setName(rs.getString("name"));
+    //                 t.setPosition(rs.getString("position"));
+    //                 t.setNumFinishes(rs.getInt("num_finishes"));
+    //                 t.setNumTaps(rs.getInt("num_taps"));
+    //                 int subs = rs.getInt("count");
+    //                 map.put(t.getId(), new TechniqueCount(rollId, t, subs));
+    //             }
+    //         }
+    //     }
+    //     return map;
+    // }
 
     /**
      * Helper method to fetch a map of technique IDs to TechniqueCount objects for the taps associated with a given roll.
@@ -641,26 +638,26 @@ public class DataProvider {
      * @return a map of technique IDs to TechniqueCount objects for the taps associated with the given roll
      * @throws SQLException if a database access error occurs
      */
-    public Map<Long, TechniqueCount> fetchTapsMapForRoll(long rollId) throws SQLException {
-        Map<Long, TechniqueCount> map = new HashMap<>();
-        String sql = "SELECT rtl.technique_id, rtl.taps_count, t.name, t.position, t.num_finishes, t.num_taps " +
-                     "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id WHERE rtl.roll_id = ? AND rtl.taps_count > 0";
-        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setLong(1, rollId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Technique t = new Technique();
-                    t.setId(rs.getLong("technique_id"));
-                    t.setName(rs.getString("name"));
-                    t.setPosition(rs.getString("position"));
-                    t.setNumFinishes(rs.getInt("num_finishes"));
-                    t.setNumTaps(rs.getInt("num_taps"));
-                    int taps = rs.getInt("taps_count");
-                    map.put(t.getId(), new TechniqueCount(t, taps));
-                }
-            }
-        }
-        return map;
-    }
+    // public Map<Long, TechniqueCount> fetchTapsMapForRoll(long rollId) throws SQLException {
+    //     Map<Long, TechniqueCount> map = new HashMap<>();
+    //     String sql = "SELECT rtl.technique_id, rtl.taps_count, t.name, t.position, t.num_finishes, t.num_taps " +
+    //                  "FROM roll_technique_links rtl JOIN techniques t ON rtl.technique_id = t.id WHERE rtl.roll_id = ? AND rtl.taps_count > 0";
+    //     try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+    //         ps.setLong(1, rollId);
+    //         try (ResultSet rs = ps.executeQuery()) {
+    //             while (rs.next()) {
+    //                 Technique t = new Technique();
+    //                 t.setId(rs.getLong("technique_id"));
+    //                 t.setName(rs.getString("name"));
+    //                 t.setPosition(rs.getString("position"));
+    //                 t.setNumFinishes(rs.getInt("num_finishes"));
+    //                 t.setNumTaps(rs.getInt("num_taps"));
+    //                 int taps = rs.getInt("taps_count");
+    //                 map.put(t.getId(), new TechniqueCount(rollId, t, taps));
+    //             }
+    //         }
+    //     }
+    //     return map;
+    // }
 }
 
