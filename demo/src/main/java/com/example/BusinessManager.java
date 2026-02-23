@@ -266,52 +266,17 @@ public class BusinessManager {
      * @return the saved TechniqueCount object with its id field populated (for new records) or unchanged (for updates)
      * @throws SQLException if there is an error during database access
      */
-    public TechniqueCount saveTechniqueCount(TechniqueCount tc) {
+    public TechniqueCount saveTechniqueCount(TechniqueCount tc) throws SQLException {
         if (tc == null) throw new IllegalArgumentException("TechniqueCount is null");
 
         // Ensure Technique is saved first (so TechniqueCount can reference it)
         Technique tech = tc.getTechnique();
         if (tech != null) {
-            saveTechnique(tech); // will insert/update as needed
+            tech = saveTechnique(tech); // will insert/update as needed
         }
+        provider.saveTechniqueCount(tc.getRollID(), tc.getTechnique().getId(), tc.getCount());
 
-        if (tc.getId() == 0) {
-            long newId = provider.insertTechniqueCount(tc);
-            tc.setId(newId);
-        } else {
-            boolean ok = provider.updateTechniqueCount(tc);
-            if (!ok) throw new RuntimeException("Failed to update TechniqueCount with id " + tc.getId());
-        }
         return tc;
-    }
-
-    /**
-     * Retrieve a TechniqueCount from the database by its id. The method returns the TechniqueCount object if found, or null if no record with the given id exists.
-     * @param id the id of the TechniqueCount to be retrieved
-     * @return the TechniqueCount object if found, or null if no record with the given id exists
-     * @throws SQLException if there is an error during database access
-     */
-    public TechniqueCount getTechniqueCountById(long id) {
-        return provider.getTechniqueCountById(id);
-    }
-
-    /**
-     * Retrieve all TechniqueCount records from the database. The method returns a list of TechniqueCount objects, which may be empty if no records exist.
-     * @return a list of TechniqueCount objects
-     * @throws SQLException if there is an error during database access
-     */
-    public List<TechniqueCount> getAllTechniqueCounts() {
-        return provider.getTechniqueCountsForRoll();
-    }
-
-    /**
-     * Delete a TechniqueCount from the database by its id. The method returns true if the deletion was successful, or false if no record with the given id was found.
-     * Note: if the TechniqueCount is referenced by Roll or other tables, database cascade rules or checks will apply, which may prevent deletion or cause related records to be deleted as well.
-     * @param id the id of the TechniqueCount to be deleted
-     * @return true if the deletion was successful, or false if no record with the given id was found
-     */
-    public boolean deleteTechniqueCount(long id) {
-        return provider.deleteTechniqueCount(id);
     }
 
 }

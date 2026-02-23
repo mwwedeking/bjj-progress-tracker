@@ -168,7 +168,7 @@ public class Roll {
     public void incrementSub(Technique technique, int by) {
         TechniqueCount tc = findSubsForTechnique(technique.getId());
         if (tc == null) {
-            tc = new TechniqueCount(technique, by);
+            tc = new TechniqueCount(this.getId(), technique, by);
             subs.add(tc);
         } else {
             tc.increment(by);
@@ -184,7 +184,7 @@ public class Roll {
     public void incrementTap(Technique technique, int by) {
         TechniqueCount tc = findTapsForTechnique(technique.getId());
         if (tc == null) {
-            tc = new TechniqueCount(technique, by);
+            tc = new TechniqueCount(this.getId(), technique, by);
             taps.add(tc);
         } else {
             tc.increment(by);
