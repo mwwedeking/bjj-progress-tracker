@@ -58,13 +58,13 @@ public class DataProvider {
      * @throws SQLException if a database access error occurs
      */
     public long saveSession(Session s) throws SQLException {
-        String sql = "INSERT INTO sessions (session_date, session_time, is_gi, instructor, rank) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO sessions (session_date, session_time, is_gi, instructor, currentBelt) VALUES (?, ?, ?, ?, ?)";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setDate(1, Date.valueOf(s.getDate()));
             ps.setTime(2, Time.valueOf(s.getTime()));
             ps.setBoolean(3, s.isGi());
             ps.setString(4, s.getInstructor());
-            ps.setString(5, s.getRank());
+            ps.setString(5, s.getcurrentBelt());
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -163,7 +163,7 @@ public class DataProvider {
             ps.setTime(2, Time.valueOf(s.getTime()));
             ps.setBoolean(3, s.isGi());
             ps.setString(4, s.getInstructor());
-            ps.setString(5, s.getRank());
+            ps.setString(5, s.getcurrentBelt());
             ps.setLong(6, s.getId());
             return ps.executeUpdate() > 0;
         }
@@ -196,7 +196,7 @@ public class DataProvider {
         s.setTime(t != null ? t.toLocalTime() : LocalTime.MIDNIGHT);
         s.setGi(rs.getBoolean("is_gi"));
         s.setInstructor(rs.getString("instructor"));
-        s.setRank(rs.getString("rank"));
+        s.setcurrentBelt(rs.getString("currentBelt"));
         return s;
     }
 

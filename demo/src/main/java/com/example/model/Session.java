@@ -15,7 +15,7 @@ import java.util.List;
  * time, 
  * whether session was gi or no-gi, 
  * instructor, 
- * user's rank at the time of the session, 
+ * user's currentBelt at the time of the session, 
  * and a list of rolls that took place during the session. 
  * This class serves as a data model for training sessions that can be tracked and analyzed in the BJJ Progress Tracker application.
  */
@@ -25,7 +25,7 @@ public class Session {
     private LocalTime time;
     private boolean isGi;
     private String instructor;
-    private String rank;    //TODO: refactor to "currentBelt" (2/3/26)
+    private String currentBelt;    
     private List<Roll> rolls = new ArrayList<>();
 
     /**
@@ -40,16 +40,16 @@ public class Session {
      * @param time the time of the training session
      * @param isGi whether the session was a gi or no-gi session
      * @param instructor the instructor of the training session
-     * @param rank the user's rank at the time of the training session
+     * @param currentBelt the user's currentBelt at the time of the training session
      * @param rolls the list of rolls that took place during the training session
      */
-    public Session(long id, LocalDate date, LocalTime time, boolean isGi, String instructor, String rank, List<Roll> rolls) {
+    public Session(long id, LocalDate date, LocalTime time, boolean isGi, String instructor, String currentBelt, List<Roll> rolls) {
         this.id = id;
         this.date = date;
         this.time = time;
         this.isGi = isGi;
         this.instructor = instructor;
-        this.rank = rank;
+        this.currentBelt = currentBelt;
         this.rolls = rolls;
     }
 
@@ -134,19 +134,19 @@ public class Session {
     }
 
     /**
-     * Get the user's rank at the time of the training session
-     * @return the user's rank at the time of the training session
+     * Get the user's currentBelt at the time of the training session
+     * @return the user's currentBelt at the time of the training session
      */
-    public String getRank() {
-        return rank;
+    public String getcurrentBelt() {
+        return currentBelt;
     }
 
     /**
-     * Set the user's rank at the time of the training session
-     * @param rank the user's rank at the time of the training session
+     * Set the user's currentBelt at the time of the training session
+     * @param currentBelt the user's currentBelt at the time of the training session
      */
-    public void setRank(String rank) {
-        this.rank = rank;
+    public void setcurrentBelt(String currentBelt) {
+        this.currentBelt = currentBelt;
     }
     
     /**
@@ -179,6 +179,6 @@ public class Session {
      */
     @Override
     public String toString() {
-        return "Session ID: " + id + ", Date: " + date + ", Time: " + time + ", Is Gi: " + isGi + ", Instructor: " + instructor + ", Rank: " + rank + ", Rolls: " + rolls;
+        return "Session ID: " + id + ", Date: " + date + ", Time: " + time + ", Is Gi: " + isGi + ", Instructor: " + instructor + ", currentBelt: " + currentBelt + ", Rolls: " + rolls;
     }
 }
