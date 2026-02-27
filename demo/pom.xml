@@ -109,7 +109,7 @@
                 <version>3.1.0</version>
                 <configuration>
                     <!-- If you want to run your existing harness via mvn exec:java -->
-                    <mainClass>com.example.BusinessManagerHarness</mainClass>
+                    <mainClass>com.example.RestApiConsoleTester</mainClass>
                 </configuration>
             </plugin>
         </plugins>
