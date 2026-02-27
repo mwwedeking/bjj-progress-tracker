@@ -22,19 +22,25 @@ public class RollController {
     }
 
     @PostMapping
-    public ResponseEntity<Roll> save(@RequestBody Roll roll) throws SQLException {
+    public ResponseEntity<Roll> saveRoll(@RequestBody Roll roll) throws SQLException {
         return ResponseEntity.ok(rollService.saveRoll(roll));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Roll> getById(@PathVariable long id) throws SQLException {
-        Roll r = rollService.getRollById(id);
+    public ResponseEntity<Roll> getRoll(@PathVariable long id) throws SQLException {
+        Roll r = rollService.getRoll(id);
         if (r == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(r);
     }
 
     @GetMapping
-    public ResponseEntity<List<Roll>> getAll() throws SQLException {
-        return ResponseEntity.ok(rollService.getAllRolls());
+    public ResponseEntity<List<Roll>> getRolls() throws SQLException {
+        return ResponseEntity.ok(rollService.getRolls());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRoll(@PathVariable long id) throws SQLException {
+        rollService.deleteRoll(id);
+        return ResponseEntity.noContent().build();
     }
 }

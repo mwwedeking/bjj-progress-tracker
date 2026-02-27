@@ -22,19 +22,25 @@ public class TechniqueController {
     }
 
     @PostMapping
-    public ResponseEntity<Technique> save(@RequestBody Technique technique) throws SQLException {
+    public ResponseEntity<Technique> saveTechnique(@RequestBody Technique technique) throws SQLException {
         return ResponseEntity.ok(techniqueService.saveTechnique(technique));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Technique> getById(@PathVariable long id) throws SQLException {
-        Technique t = techniqueService.getTechniqueById(id);
+    public ResponseEntity<Technique> getTechnique(@PathVariable long id) throws SQLException {
+        Technique t = techniqueService.getTechnique(id);
         if (t == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(t);
     }
 
     @GetMapping
-    public ResponseEntity<List<Technique>> getAll() throws SQLException {
-        return ResponseEntity.ok(techniqueService.getAllTechniques());
+    public ResponseEntity<List<Technique>> getTechniques() throws SQLException {
+        return ResponseEntity.ok(techniqueService.getTechniques());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTechnique(@PathVariable long id) throws SQLException {    
+        techniqueService.deleteTechnique(id);
+        return ResponseEntity.noContent().build();
     }
 }

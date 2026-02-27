@@ -24,12 +24,17 @@ public class RollServiceImpl implements RollService {
     }
 
     @Override
-    public Roll getRollById(long id) throws SQLException {
-        return businessManager.getRollById(id); 
+    public Roll getRoll(long id) throws SQLException {
+        return businessManager.getRoll(id); 
     }
 
     @Override
-    public List<Roll> getAllRolls() throws SQLException {
-        return businessManager.getAllRolls(); 
+    public List<Roll> getRolls() throws SQLException {
+        return businessManager.getRolls();
+    }
+
+    @Override
+    public void deleteRoll(long id) throws SQLException {
+        businessManager.deleteRoll(id);
     }
 }

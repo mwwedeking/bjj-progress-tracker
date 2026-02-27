@@ -24,12 +24,17 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public Session getSessionById(long id) throws SQLException {
-        return businessManager.getSessionById(id);
+    public Session getSession(long id) throws SQLException {
+        return businessManager.getSession(id);
     }
 
     @Override
-    public List<Session> getAllSessions() throws SQLException {
-        return businessManager.getAllSessions();
+    public List<Session> getSessions() throws SQLException {
+        return businessManager.getSessions();
     }
+
+    @Override
+    public void deleteSession(long id) throws SQLException {
+        businessManager.deleteSession(id);
+    }   
 }

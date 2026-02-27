@@ -22,20 +22,25 @@ public class SessionController {
     }
 
     @PostMapping
-    public ResponseEntity<Session> save(@RequestBody Session session) throws SQLException {
-        // Session saved = sessionService.saveSession(session);
+    public ResponseEntity<Session> saveSession(@RequestBody Session session) throws SQLException {
         return ResponseEntity.ok(sessionService.saveSession(session));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Session> getById(@PathVariable long id) throws SQLException {
-        Session s = sessionService.getSessionById(id);
+    public ResponseEntity<Session> getSession(@PathVariable long id) throws SQLException {
+        Session s = sessionService.getSession(id);
         if (s == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(s);
     }
 
     @GetMapping
-    public ResponseEntity<List<Session>> getAll() throws SQLException {
-        return ResponseEntity.ok(sessionService.getAllSessions());
+    public ResponseEntity<List<Session>> getSessions() throws SQLException {
+        return ResponseEntity.ok(sessionService.getSessions());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSession(@PathVariable long id) throws SQLException {
+        sessionService.deleteSession(id);
+        return ResponseEntity.noContent().build();
     }
 }
