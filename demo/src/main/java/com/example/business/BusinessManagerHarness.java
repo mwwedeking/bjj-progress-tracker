@@ -18,7 +18,7 @@ public class BusinessManagerHarness {
 
         // 2) Read it back by id
         System.out.println("\n-- Reading technique by id --");
-        Technique readTechnique = manager.getTechniqueById(newTechnique.getId());
+        Technique readTechnique = manager.getTechnique(newTechnique.getId());
         System.out.println("Read technique: " + readTechnique);
 
         // 3) Update the technique
@@ -33,7 +33,7 @@ public class BusinessManagerHarness {
 
         //5) Try to read it back again (should be null)
         System.out.println("\n-- Reading deleted technique --");
-        Technique deletedTechnique = manager.getTechniqueById(readTechnique.getId());
+        Technique deletedTechnique = manager.getTechnique(readTechnique.getId());
         System.out.println("Deleted technique read result (should be null): " + deletedTechnique);
 
         System.out.println("\n=== Demo complete ===");

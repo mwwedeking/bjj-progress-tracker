@@ -21,7 +21,7 @@ public class TechniqueCountController {
     }
 
     @PostMapping
-    public ResponseEntity<TechniqueCount> save(@RequestBody TechniqueCount tc) throws SQLException {
+    public ResponseEntity<TechniqueCount> saveTechniqueCount(@RequestBody TechniqueCount tc) throws SQLException {
         return ResponseEntity.ok(service.saveTechniqueCount(tc));
     }
 }

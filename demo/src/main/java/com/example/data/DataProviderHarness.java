@@ -5,7 +5,7 @@ public class DataProviderHarness {
     public static void main(String[] args) throws Exception {
         DataProvider provider = new DataProvider();
 
-        provider.getAllTechniques().forEach(System.out::println);
+        provider.getTechniques().forEach(System.out::println);
 
         // Example database manipulation used for Project 1
         // Assume technique id 1 is Armbar and roll id 1 exists

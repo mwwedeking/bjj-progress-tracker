@@ -74,8 +74,8 @@ public class BusinessManager {
      * @return the Session object if found, or null if no record with the given id exists
      * @throws SQLException if there is an error during database access
      */ 
-    public Session getSessionById(long id) throws SQLException {
-        return provider.getSessionById(id);
+    public Session getSession(long id) throws SQLException {
+        return provider.getSession(id);
     }
 
     /**
@@ -83,8 +83,8 @@ public class BusinessManager {
      * @return a list of Session objects
      * @throws SQLException if there is an error during database access
      */
-    public List<Session> getAllSessions() throws SQLException {
-        return provider.getAllSessions();
+    public List<Session> getSessions() throws SQLException {
+        return provider.getSessions();
     }
 
     /**
@@ -97,7 +97,7 @@ public class BusinessManager {
     public boolean deleteSession(long id) throws SQLException {
         // Best-effort: delete rolls associated with this session first (if they are not reused elsewhere)
         try {
-            Session existing = provider.getSessionById(id);
+            Session existing = provider.getSession(id);
             if (existing != null && existing.getRolls() != null) {
                 for (Roll r : existing.getRolls()) {
                     if (r != null && r.getId() != 0) {
@@ -161,8 +161,8 @@ public class BusinessManager {
      * @return the Roll object if found, or null if no record with the given id exists 
      * @throws SQLException if there is an error during database access
      */
-    public Roll getRollById(long id) throws SQLException {
-        return provider.getRollById(id);
+    public Roll getRoll(long id) throws SQLException {
+        return provider.getRoll(id);
     }
 
     /**
@@ -170,8 +170,8 @@ public class BusinessManager {
      * @return a list of Roll objects
      * @throws SQLException if there is an error during database access
      */
-    public List<Roll> getAllRolls() throws SQLException {
-        return provider.getAllRolls();
+    public List<Roll> getRolls() throws SQLException {
+        return provider.getRolls();
     }
 
     /**
@@ -184,7 +184,7 @@ public class BusinessManager {
     public boolean deleteRoll(long id) throws SQLException {
         // Best-effort: fetch roll, delete its technique counts first (if you want)
         try {
-            Roll existing = provider.getRollById(id);
+            Roll existing = provider.getRoll(id);
             if (existing != null) {
                 if (existing.getSubs() != null) {
                     for (TechniqueCount tc : existing.getSubs()) {
@@ -233,8 +233,8 @@ public class BusinessManager {
      * @return the Technique object if found, or null if no record with the given id exists
      * @throws SQLException if there is an error during database access
      */
-    public Technique getTechniqueById(long id) throws SQLException {
-        return provider.getTechniqueById(id);
+    public Technique getTechnique(long id) throws SQLException {
+        return provider.getTechnique(id);
     }
 
     /**
@@ -242,8 +242,8 @@ public class BusinessManager {
      * @return a list of Technique objects
      * @throws SQLException if there is an error during database access
      */
-    public List<Technique> getAllTechniques() throws SQLException {
-        return provider.getAllTechniques();
+    public List<Technique> getTechniques() throws SQLException {
+        return provider.getTechniques();
     }
 
     /**

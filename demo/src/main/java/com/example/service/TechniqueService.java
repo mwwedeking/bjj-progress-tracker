@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface TechniqueService {
     Technique saveTechnique(Technique technique) throws SQLException;
-    Technique getTechniqueById(long id) throws SQLException;
-    List<Technique> getAllTechniques() throws SQLException;
+    Technique getTechnique(long id) throws SQLException;
+    List<Technique> getTechniques() throws SQLException;
+    void deleteTechnique(long id) throws SQLException;
 }

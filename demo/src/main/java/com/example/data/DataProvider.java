@@ -102,7 +102,7 @@ public class DataProvider {
                     long rollId = rs.getLong(1);
                     r.setId(rollId);
                     // insert technique links if present
-                    saveAllTechniqueCountsForRoll(rollId, r);
+                    saveTechniqueCountsForRoll(rollId, r);
                     return rollId;
                 }
             }
@@ -116,7 +116,7 @@ public class DataProvider {
      * @return the Session object if found, or null if not found
      * @throws SQLException if a database access error occurs
      */
-    public Session getSessionById(long id) throws SQLException {
+    public Session getSession(long id) throws SQLException {
         String sql = "SELECT * FROM sessions WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -136,7 +136,7 @@ public class DataProvider {
      * @return a list of Session objects
      * @throws SQLException if a database access error occurs
      */
-    public List<Session> getAllSessions() throws SQLException {
+    public List<Session> getSessions() throws SQLException {
         List<Session> out = new ArrayList<>();
         String sql = "SELECT * FROM sessions ORDER BY session_date DESC";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
@@ -222,7 +222,7 @@ public class DataProvider {
      * @return the Roll object if found, or null if not found
      * @throws SQLException if a database access error occurs
      */
-    public Roll getRollById(long id) throws SQLException {
+    public Roll getRoll(long id) throws SQLException {
         String sql = "SELECT * FROM rolls WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -242,7 +242,7 @@ public class DataProvider {
      * @return a list of Roll objects
      * @throws SQLException if a database access error occurs
      */
-    public List<Roll> getAllRolls() throws SQLException {
+    public List<Roll> getRolls() throws SQLException {
         List<Roll> out = new ArrayList<>();
         String sql = "SELECT * FROM rolls ORDER BY created_at DESC";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
@@ -295,7 +295,7 @@ public class DataProvider {
             ps.setLong(4, r.getId());
             boolean ok = ps.executeUpdate() > 0;
             if (ok) {
-                saveAllTechniqueCountsForRoll(r.getId(), r); // persist counters
+                saveTechniqueCountsForRoll(r.getId(), r); // persist counters
             }
             return ok;
         }
@@ -367,7 +367,7 @@ public class DataProvider {
      * @return a Technique object representing the technique with the specified ID, or null if not found
      * @throws SQLException if a database access error occurs
      */
-    public Technique getTechniqueById(long id) throws SQLException {
+    public Technique getTechnique(long id) throws SQLException {
         String sql = "SELECT * FROM techniques WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -383,7 +383,7 @@ public class DataProvider {
      * @return a list of Technique objects representing all techniques in the database
      * @throws SQLException if a database access error occurs
      */
-    public List<Technique> getAllTechniques() throws SQLException {
+    public List<Technique> getTechniques() throws SQLException {
         List<Technique> list = new ArrayList<>();
         String sql = "SELECT * FROM techniques";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql);
@@ -494,7 +494,7 @@ public class DataProvider {
      * @param r the Roll object containing the subs and taps lists to be upserted
      * @throws SQLException if a database access error occurs
      */
-    private void saveAllTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
+    private void saveTechniqueCountsForRoll(long rollId, Roll r) throws SQLException {
         // gather per technique id the subs and taps
         Map<Long, Integer> subsMap = new HashMap<>();
         for (TechniqueCount tc : r.getSubs()) subsMap.put(tc.getTechnique().getId(), tc.getCount());

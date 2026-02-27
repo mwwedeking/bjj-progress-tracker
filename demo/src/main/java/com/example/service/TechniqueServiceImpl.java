@@ -24,12 +24,17 @@ public class TechniqueServiceImpl implements TechniqueService {
     }
 
     @Override
-    public Technique getTechniqueById(long id) throws SQLException {
-        return businessManager.getTechniqueById(id);
+    public Technique getTechnique(long id) throws SQLException {
+        return businessManager.getTechnique(id);
     }
 
     @Override
-    public List<Technique> getAllTechniques() throws SQLException {
-        return businessManager.getAllTechniques();
+    public List<Technique> getTechniques() throws SQLException {
+        return businessManager.getTechniques();
+    }
+
+    @Override
+    public void deleteTechnique(long id) throws SQLException {
+        businessManager.deleteTechnique(id);
     }
 }
