@@ -4,6 +4,7 @@ com\example\controller\SessionController.class
 com\example\service\SessionService.class
 com\example\service\TechniqueCountService.class
 com\example\service\TechniqueService.class
+com\example\RestApiConsoleTester.class
 com\example\service\TechniqueServiceImpl.class
 com\example\controller\RollController.class
 com\example\BjjApiApplication.class
