@@ -19,8 +19,8 @@ public class RollServiceImpl implements RollService {
     }
 
     @Override
-    public Roll saveRoll(Roll roll) throws SQLException {
-        return businessManager.saveRoll(roll);
+    public Roll saveRoll(long sessionId,Roll roll) throws SQLException {
+        return businessManager.saveRoll(sessionId, roll);
     }
 
     @Override
