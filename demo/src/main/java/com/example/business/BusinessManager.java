@@ -51,7 +51,7 @@ public class BusinessManager {
         if (s.getRolls() != null) {
             List<Roll> newRolls = new ArrayList<>();
             for (Roll r : s.getRolls()) {
-                Roll saved = saveRoll(r);
+                Roll saved = saveRoll(s.getId(), r);
                 newRolls.add(saved);
             }
             s.setRolls(newRolls);
@@ -122,7 +122,7 @@ public class BusinessManager {
      * @return the saved Roll object
      * @throws SQLException if there is an error during database access
      */
-    public Roll saveRoll(Roll r) throws SQLException {
+    public Roll saveRoll(long sessionId, Roll r) throws SQLException {
         if (r == null) throw new IllegalArgumentException("Roll is null");
 
         // Save nested TechniqueCounts (subs and taps). 
@@ -146,7 +146,7 @@ public class BusinessManager {
         }
 
         if (r.getId() == 0) {
-            long newId = provider.saveRoll(r.getId(), r); //TODO: I don't think this is correct; should be session ID???
+            long newId = provider.saveRoll(sessionId, r);
             r.setId(newId);
         } else {
             boolean ok = provider.updateRoll(r);

@@ -157,7 +157,7 @@ public class DataProvider {
      * @throws SQLException if a database access error occurs
      */
     public boolean updateSession(Session s) throws SQLException {
-        String sql = "UPDATE sessions SET session_date = ?, session_time = ?, is_gi = ?, instructor = ?, rank = ? WHERE id = ?";
+        String sql = "UPDATE sessions SET session_date = ?, session_time = ?, is_gi = ?, instructor = ?, currentBelt = ? WHERE id = ?";
         try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setDate(1, Date.valueOf(s.getDate()));
             ps.setTime(2, Time.valueOf(s.getTime()));

@@ -34,8 +34,8 @@ public class RestApiConsoleTester {
     private static void testTechnique() throws Exception {
         // CREATE
         ObjectNode create = mapper.createObjectNode();
-        create.put("name", "Console-test0");
-        create.put("position", "Console-test0");
+        create.put("name", "test-technique");
+        create.put("position", "test-technique-position");
         create.put("numFinishes", 0);
         create.put("numTaps", 0);
 
@@ -58,8 +58,8 @@ public class RestApiConsoleTester {
         if (idNode.isNumber()) update.put("id", idNode.longValue());
         else update.put("id", idNode.asText());
 
-        update.put("name", "Console-test0-updated");
-        update.put("position", "Console-test0");
+        update.put("name", "test-technique-updated");
+        update.put("position", "test-technique-position-updated");
         update.put("numFinishes", 1);
         update.put("numTaps", 0);
 
@@ -84,16 +84,35 @@ public class RestApiConsoleTester {
     // Roll
     // =============================
     private static void testRoll() throws Exception {
+
+        // 1) Create a temporary session to attach the roll to
+        JsonNode tempSession = createTempSession();
+        if (tempSession == null) {
+            System.err.println("Failed to create temporary session for roll test. Aborting roll test.");
+            return;
+        }
+        JsonNode sessionIdNode = tempSession.get("id");
+        if (sessionIdNode == null) {
+            System.err.println("Temporary session response missing id field: " + tempSession.toString());
+            return;
+        }
+        String sessionIdStr = sessionIdNode.isNumber() ? String.valueOf(sessionIdNode.longValue()) : sessionIdNode.asText();
+        System.out.println("Created temporary Session ID for roll test: " + sessionIdStr);
+
+        // 2) Create Roll (send sessionId as a query parameter)
         ObjectNode create = mapper.createObjectNode();
         create.put("lengthMinutes", 5);
-        create.put("partner", "John");
+        create.put("partner", "test-partner");
         create.put("numRounds", 3);
         create.putArray("subs");
         create.putArray("taps");
 
-        HttpResponse<String> createResp = sendPostRaw("/rolls", create.toString());
+        String createEndpoint = "/rolls?sessionId=" + encodePath(sessionIdStr);
+        HttpResponse<String> createResp = sendPostRaw(createEndpoint, create.toString());
         if (!is2xx(createResp)) {
             System.err.println("Create Roll failed: " + createResp.statusCode() + " " + createResp.body());
+            // attempt to clean up the temporary session before returning
+            deleteSessionById(sessionIdStr);
             return;
         }
         System.out.println("Created Roll: " + createResp.body());
@@ -102,26 +121,31 @@ public class RestApiConsoleTester {
         JsonNode idNode = createdJson.get("id");
         if (idNode == null) {
             System.err.println("Create response missing id field. Response: " + createResp.body());
+            // clean up session
+            deleteSessionById(sessionIdStr);
             return;
         }
 
+        // 3) Update the roll (also send sessionId in query param if your endpoint requires it)
         ObjectNode update = mapper.createObjectNode();
         if (idNode.isNumber()) update.put("id", idNode.longValue());
         else update.put("id", idNode.asText());
 
         update.put("lengthMinutes", 6);
-        update.put("partner", "John Updated");
+        update.put("partner", "test-partner-updated");
         update.put("numRounds", 4);
         update.putArray("subs");
         update.putArray("taps");
 
-        HttpResponse<String> updateResp = sendPostRaw("/rolls", update.toString());
+        String updateEndpoint = "/rolls?sessionId=" + encodePath(sessionIdStr);
+        HttpResponse<String> updateResp = sendPostRaw(updateEndpoint, update.toString());
         if (!is2xx(updateResp)) {
             System.err.println("Update Roll failed: " + updateResp.statusCode() + " " + updateResp.body());
         } else {
             System.out.println("Updated Roll: " + updateResp.body());
         }
 
+        // 4) Delete the roll
         String idForDelete = idNode.isNumber() ? String.valueOf(idNode.longValue()) : idNode.asText();
         HttpResponse<String> delResp = sendDeleteRaw("/rolls/" + encodePath(idForDelete));
         if (!is2xx(delResp)) {
@@ -129,6 +153,37 @@ public class RestApiConsoleTester {
         } else {
             System.out.println("Deleted Roll ID: " + idForDelete);
         }
+
+        // 5) Clean up the temporary session
+        HttpResponse<String> delSessionResp = deleteSessionById(sessionIdStr);
+        if (!is2xx(delSessionResp)) {
+            System.err.println("Delete temporary session failed: " + delSessionResp.statusCode() + " " + delSessionResp.body());
+        } else {
+            System.out.println("Deleted temporary Session ID: " + sessionIdStr);
+        }
+    }
+
+    // Helper: create a temporary session and return the parsed JsonNode (or null on failure)
+    private static JsonNode createTempSession() throws Exception {
+        ObjectNode create = mapper.createObjectNode();
+        create.put("date", "2026-02-23");
+        create.put("time", "19:00:00");
+        create.put("gi", false);
+        create.put("instructor", "test-coach");
+        create.put("currentBelt", "White");
+        create.putArray("rolls");
+
+        HttpResponse<String> createResp = sendPostRaw("/sessions", create.toString());
+        if (!is2xx(createResp)) {
+            System.err.println("Create Temp Session failed: " + createResp.statusCode() + " " + createResp.body());
+            return null;
+        }
+        return mapper.readTree(createResp.body());
+    }
+
+    // Helper: delete a session by id and return the raw HttpResponse
+    private static HttpResponse<String> deleteSessionById(String sessionId) throws Exception {
+        return sendDeleteRaw("/sessions/" + encodePath(sessionId));
     }
 
     // =============================
@@ -136,13 +191,11 @@ public class RestApiConsoleTester {
     // =============================
     private static void testSession() throws Exception {
         ObjectNode create = mapper.createObjectNode();
-        create.put("date", "2026-02-23");
+        create.put("date", "2026-03-02");
         create.put("time", "19:00:00");
-        // match your API's field name for gi/isGi; use the field name your controller/model expects
-        // if your response earlier showed "gi":false, prefer "gi" here
         create.put("gi", false);
-        create.put("instructor", "Test-Coach");
-        create.put("currentBelt", (String) null);
+        create.put("instructor", "test-coach");
+        create.put("currentBelt", "White");
         create.putArray("rolls");
 
         HttpResponse<String> createResp = sendPostRaw("/sessions", create.toString());
@@ -166,8 +219,8 @@ public class RestApiConsoleTester {
         update.put("date", "2026-02-24");
         update.put("time", "18:30:00");
         update.put("gi", true);
-        update.put("instructor", "Coach Updated");
-        update.put("currentBelt", (String) null);
+        update.put("instructor", "test-coach-updated");
+        update.put("currentBelt", "Blue");
         update.putArray("rolls");
 
         HttpResponse<String> updateResp = sendPostRaw("/sessions", update.toString());

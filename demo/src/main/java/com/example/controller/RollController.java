@@ -22,8 +22,8 @@ public class RollController {
     }
 
     @PostMapping
-    public ResponseEntity<Roll> saveRoll(@RequestBody Roll roll) throws SQLException {
-        return ResponseEntity.ok(rollService.saveRoll(roll));
+    public ResponseEntity<Roll> saveRoll(@RequestParam long sessionId, @RequestBody Roll roll) throws SQLException {
+        return ResponseEntity.ok(rollService.saveRoll(sessionId, roll));
     }
 
     @GetMapping("/{id}")
