@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 @RestController
 @RequestMapping("/api/techniquecounts")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TechniqueCountController {
 
     private final TechniqueCountService service;
