@@ -41,7 +41,7 @@ type Session = {
 }
 
 // --- Helper: API client with configurable base URL ---
-const STORAGE_KEY = 'http://localhost:8080/'
+const STORAGE_KEY = 'http://localhost:8080'
 
 function useApiBaseUrl() {
   const [baseUrl, setBaseUrl] = useState<string>(() => {
