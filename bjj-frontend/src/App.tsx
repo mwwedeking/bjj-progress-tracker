@@ -5,40 +5,10 @@ Save this file as: src/App.tsx inside a Vite + React + TypeScript project.
 
 import React, { useEffect, useState } from 'react'
 import './App.css'
-
-// --- Types (match your backend DTOs) ---
-type Technique = {
-  id: number
-  name: string
-  position: string
-  numFinishes: number
-  numTaps: number
-}
-
-type TechniqueCount = {
-  rollID: number
-  technique: Technique
-  count: number
-}
-
-type Roll = {
-  id: number
-  lengthMinutes: number
-  partner: string
-  numRounds: number
-  subs: TechniqueCount[]
-  taps: TechniqueCount[]
-}
-
-type Session = {
-  id: number
-  date: string // ISO date
-  time: string // HH:mm
-  isGi: boolean
-  instructor: string
-  currentBelt: string
-  rolls: Roll[]
-}
+import type { Technique } from './components/technique'
+import type { TechniqueCount } from './components/technique-count'
+import type { Roll } from './components/roll'
+import type { Session } from './components/session'
 
 // --- Helper: API client with configurable base URL ---
 const STORAGE_KEY = 'http://localhost:8080'
@@ -66,8 +36,6 @@ async function apiFetch<T>(baseUrl: string, path: string, opts: RequestInit = {}
   if (contentType.includes('application/json')) return (await res.json()) as T
   return (null as unknown) as T
 }
-
-// --- Components ---
 
 function Header({ baseUrl, setBaseUrl }: { baseUrl: string; setBaseUrl: (s: string) => void }) {
   const [value, setValue] = useState(baseUrl)
@@ -124,7 +92,7 @@ function SessionsList({ baseUrl, onSelect }: { baseUrl: string; onSelect: (s: Se
           <li key={s.id} className="session-item">
             <div>
               <div style={{fontWeight:600}}>{s.date} {s.time}</div>
-              <div className="session-meta">Instructor: {s.instructor || '—'} | Belt: {s.currentBelt || '—'}</div>
+              <div className="session-meta">Session ID: {s.id} | Instructor: {s.instructor || '—'} | Belt: {s.currentBelt || '—'}</div>
             </div>
             <div style={{display:'flex', gap:8}}>
               <button className="btn" onClick={() => onSelect(s)}>View</button>
