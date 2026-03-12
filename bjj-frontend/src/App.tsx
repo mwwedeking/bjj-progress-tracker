@@ -11,7 +11,7 @@ import type { Roll } from './components/roll'
 import type { Session } from './components/session'
 
 // --- Helper: API client with configurable base URL ---
-const STORAGE_KEY = 'http://localhost:8080'
+const STORAGE_KEY = import.meta.env.VITE_URL;
 
 function useApiBaseUrl() {
   const [baseUrl, setBaseUrl] = useState<string>(() => {
