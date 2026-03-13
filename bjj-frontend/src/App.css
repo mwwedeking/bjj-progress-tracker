@@ -18,7 +18,16 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Robo
 .btn.secondary { background:#6b7280; }
 .btn.danger { background:var(--danger); }
 .btn.success { background:var(--success); }
-.container { display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; }
+.container {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+/* Default: 3 column layout */
+.container.three-col {
+  grid-template-columns: 300px 1fr 1200px;
+}
 .card { background:var(--card); border-radius:8px; padding:12px; box-shadow: 0 1px 3px rgba(2,6,23,0.06); }
 .sessions-list ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
 .session-item { display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:6px; border:1px solid #e6e9ef; }
@@ -28,7 +37,68 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Robo
 .roll-card { border:1px solid #e6e9ef; padding:8px; border-radius:6px; margin-bottom:8px; }
 .footer { text-align:center; padding:8px; color:var(--muted); font-size:13px; }
 
+/* Technique table (if not already present) */
+.tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tech-table thead th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 2px solid #e6e9ef;
+  background: #fafafa;
+}
+.tech-table tbody td {
+  padding: 8px;
+  border-bottom: 1px solid #f1f3f5;
+}
+.tech-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-card {
+  width: 520px;
+  max-width: calc(100% - 32px);
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 6px 30px rgba(2,6,23,0.3);
+}
+.form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.form-row .label { width: 120px; color: #6b7280; font-size: 13px; }
+.form-row .input { flex: 1; padding: 6px 8px; border: 1px solid #e6e9ef; border-radius: 6px; }
+
+/* small responsive */
+@media (max-width: 560px) {
+  .form-row { flex-direction: column; align-items: stretch; }
+  .form-row .label { width: auto; }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
-  .container { grid-template-columns: 1fr; }
+  .container.three-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .container.three-col {
+    grid-template-columns: 300px 1fr;
+  }
 }
