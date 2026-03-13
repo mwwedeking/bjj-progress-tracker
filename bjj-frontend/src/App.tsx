@@ -218,6 +218,210 @@ function SessionEditor({ baseUrl, session, onSaved }: { baseUrl: string; session
   )
 }
 
+// --- TechniqueLibrary with CRUD ---
+function TechniqueLibrary({ baseUrl }: { baseUrl: string }) {
+  const [techniques, setTechniques] = useState<Technique[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // modal form state
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editing, setEditing] = useState<Technique | null>(null)
+  const [formSaving, setFormSaving] = useState(false)
+
+  async function load() {
+    if (!baseUrl) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await apiFetch<Technique[]>(baseUrl, '/api/techniques')
+      setTechniques(data)
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseUrl])
+
+  function openCreate() {
+    setEditing({ id: 0, name: '', position: '', numFinishes: 0, numTaps: 0 })
+    setIsFormOpen(true)
+  }
+  function openEdit(t: Technique) {
+    setEditing(t)
+    setIsFormOpen(true)
+  }
+
+  function closeForm() {
+    setEditing(null)
+    setIsFormOpen(false)
+  }
+
+  async function saveTechnique(tech: Technique) {
+    if (!baseUrl) return alert('Set API base URL first')
+    setFormSaving(true)
+    try {
+      if (tech.id === 0) {
+        const created = await apiFetch<Technique>(baseUrl, '/api/techniques', {
+          method: 'POST',
+          body: JSON.stringify(tech),
+        })
+        setTechniques((prev) => [created, ...prev])
+        closeForm()
+      } else {
+        const updated = await apiFetch<Technique>(baseUrl, `/api/techniques/${tech.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(tech),
+        })
+        setTechniques((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        closeForm()
+      }
+    } catch (e: any) {
+      alert('Save failed: ' + e.message)
+    } finally {
+      setFormSaving(false)
+    }
+  }
+
+  async function deleteTechnique(id: number) {
+    if (!confirm('Delete technique?')) return
+    try {
+      await apiFetch<void>(baseUrl, `/api/techniques/${id}`, { method: 'DELETE' })
+      setTechniques((prev) => prev.filter((t) => t.id !== id))
+    } catch (e: any) {
+      alert('Delete failed: ' + e.message)
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <h3 style={{ margin: 0 }}>Technique Library</h3>
+        <div>
+          <button className="btn success" style={{ marginRight: 8 }} onClick={openCreate}>New Technique</button>
+          <button className="btn secondary" onClick={load}>Refresh</button>
+        </div>
+      </div>
+
+      {loading && <div>Loading techniques...</div>}
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+
+      {!loading && !error && (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="tech-table" style={{ minWidth: 600 }}>
+            <thead>
+              <tr>
+                <th style={{ width: 60 }}>ID</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th style={{ width: 120, textAlign: 'right' }}>#Finishes</th>
+                <th style={{ width: 120, textAlign: 'right' }}>#Taps</th>
+                <th style={{ width: 160 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {techniques.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 12 }}>No techniques</td></tr>
+              ) : (
+                techniques.map((t) => (
+                  <tr key={t.id}>
+                    <td>{t.id}</td>
+                    <td>{t.name}</td>
+                    <td>{t.position}</td>
+                    <td style={{ textAlign: 'right' }}>{t.numFinishes}</td>
+                    <td style={{ textAlign: 'right' }}>{t.numTaps}</td>
+                    <td>
+                      <button className="btn" style={{ marginRight: 8 }} onClick={() => openEdit(t)}>Edit</button>
+                      <button className="btn danger" onClick={() => deleteTechnique(t.id)}>Delete</button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {isFormOpen && editing && (
+        <TechniqueForm
+          technique={editing}
+          onCancel={closeForm}
+          onSave={saveTechnique}
+          saving={formSaving}
+        />
+      )}
+    </div>
+  )
+}
+
+/* --- TechniqueForm (modal) --- */
+function TechniqueForm({
+  technique,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  technique: Technique
+  onSave: (t: Technique) => Promise<void>
+  onCancel: () => void
+  saving: boolean
+}) {
+  const [local, setLocal] = useState<Technique>(technique)
+
+  useEffect(() => setLocal(technique), [technique])
+
+  function updateField<K extends keyof Technique>(k: K, v: Technique[K]) {
+    setLocal((p) => ({ ...p, [k]: v }))
+  }
+
+  async function submit(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+    // basic validation
+    if (!local.name || !local.position) return alert('Name and position required')
+    await onSave(local)
+  }
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-card">
+        <h4 style={{ marginTop: 0 }}>{local.id === 0 ? 'Create Technique' : `Edit Technique #${local.id}`}</h4>
+
+        <form onSubmit={submit}>
+          <div className="form-row">
+            <label className="label">Name</label>
+            <input className="input" value={local.name} onChange={(e) => updateField('name', e.target.value)} />
+          </div>
+
+          <div className="form-row">
+            <label className="label">Position</label>
+            <input className="input" value={local.position} onChange={(e) => updateField('position', e.target.value)} />
+          </div>
+
+          <div className="form-row">
+            <label className="label"># Finishes</label>
+            <input className="input" type="number" value={local.numFinishes} onChange={(e) => updateField('numFinishes', Number(e.target.value || 0))} />
+          </div>
+
+          <div className="form-row">
+            <label className="label"># Taps</label>
+            <input className="input" type="number" value={local.numTaps} onChange={(e) => updateField('numTaps', Number(e.target.value || 0))} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+            <button type="button" className="btn secondary" onClick={onCancel} disabled={saving}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const { baseUrl, setBaseUrl } = useApiBaseUrl()
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
@@ -225,12 +429,19 @@ export default function App() {
   return (
     <div>
       <Header baseUrl={baseUrl} setBaseUrl={setBaseUrl} />
-      <main className="container">
+      <main className="container three-col">
         <section className="card">
           <SessionsList baseUrl={baseUrl} onSelect={(s) => setSelectedSession(s)} />
         </section>
         <section className="card">
-          <SessionEditor baseUrl={baseUrl} session={selectedSession} onSaved={(s) => setSelectedSession(s)} />
+          <SessionEditor
+            baseUrl={baseUrl}
+            session={selectedSession}
+            onSaved={(s) => setSelectedSession(s)}
+          />
+        </section>
+        <section className="card">
+          <TechniqueLibrary baseUrl={baseUrl} />
         </section>
       </main>
       <div className="footer">Tip: make sure your backend allows CORS for this origin (http://localhost:5173 by default for Vite).</div>
