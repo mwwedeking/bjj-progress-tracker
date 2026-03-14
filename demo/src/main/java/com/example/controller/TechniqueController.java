@@ -38,6 +38,12 @@ public class TechniqueController {
         return ResponseEntity.ok(techniqueService.getTechniques());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Technique> updateTechnique(@PathVariable long id, @RequestBody Technique technique) throws SQLException {
+        technique.setId(id);
+        return ResponseEntity.ok(techniqueService.saveTechnique(technique));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTechnique(@PathVariable long id) throws SQLException {    
         techniqueService.deleteTechnique(id);

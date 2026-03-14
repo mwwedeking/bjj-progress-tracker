@@ -38,6 +38,12 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.getSessions());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Session> updateSession(@PathVariable long id, @RequestBody Session session) throws SQLException {
+        session.setId(id);
+        return ResponseEntity.ok(sessionService.saveSession(session));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSession(@PathVariable long id) throws SQLException {
         sessionService.deleteSession(id);
