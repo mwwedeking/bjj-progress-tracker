@@ -1,29 +1,97 @@
-# bjj-progress-tracker
+# BJJ Progression Tracker
 
-# Build & run
-First clone the repo and install any required dependencies 
+A simple full‑stack application for tracking Brazilian Jiu‑Jitsu
+training sessions, rolls, and techniques.
 
-Then, create .env file and add corresponding environment variables 
+------------------------------------------------------------------------
 
-Then, cd to the 'demo' directory (project root) 
+# Tech Stack
 
-Then, run the following command(s): 
-mvn clean package && mvn spring-boot:run 
+Backend - Java - Spring Boot - Maven
 
-Note: 
-API endpoints may be access through LocalHost(Port 8080) or using CURL operations in another terminal window instance. 
+Database - MySQL
 
-LocalHost browser example of getting all techniques: 
-Paste in web browser: 
-http://localhost:8080/api/techniques 
+Frontend - HTML/CSS/JavaScript (or React depending on version)
 
-Curl example of creating a new technique: 
-Paste in a separate terminal from where spring boot application is running: 
-curl -X POST http://localhost:8080/api/techniques \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name":"example-name",
-    "position":"example-postion",
-    "numFinishes":example-num-finishes(typeInt),
-    "numTaps":example-num-taps(typeInt)
-  }'
+------------------------------------------------------------------------
+
+# Prerequisites
+
+Install the following:
+
+-   Java 17
+-   Maven
+-   MySQL
+-   Git
+-   Node.js + npm (if using React frontend)
+
+------------------------------------------------------------------------
+
+# Quick Start
+
+## 1 Clone the Repository
+
+    git clone https://github.com/<your-username>/<repo-name>.git
+    cd <repo-name>
+
+------------------------------------------------------------------------
+
+## 2 Setup Database
+
+    CREATE DATABASE bjj_progress;
+    CREATE USER 'bjj_user'@'localhost' IDENTIFIED BY 'bjj_password';
+    GRANT ALL PRIVILEGES ON bjj_progress.* TO 'bjj_user'@'localhost';
+
+Run SQL scripts provided in the repository to create tables.
+
+------------------------------------------------------------------------
+
+## 3 Run Backend
+
+    cd backend
+    mvn clean package
+    mvn spring-boot:run
+
+Backend runs at:
+
+    http://localhost:8080
+
+------------------------------------------------------------------------
+
+## 4 Run Frontend
+
+    cd frontend
+    npm install
+    npm start
+
+Frontend usually runs at:
+
+    http://localhost:3000
+
+------------------------------------------------------------------------
+
+# Verify Installation
+
+Backend health check:
+
+    http://localhost:8080/actuator/health
+
+Test API:
+
+    http://localhost:8080/api/techniques
+
+If the frontend loads and data appears, the setup succeeded.
+
+------------------------------------------------------------------------
+
+# Documentation
+
+Full deployment instructions are available in:
+
+    DEPLOYMENT.md
+
+------------------------------------------------------------------------
+
+# License
+
+Add your project license here.
