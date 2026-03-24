@@ -1,23 +1,23 @@
-# BJJ Progression Tracker
+# BJJ Progress Tracker
 
-A simple full‑stack application for tracking Brazilian Jiu‑Jitsu
-training sessions, rolls, and techniques.
+A simple full‑stack application for tracking Brazilian Jiu‑Jitsu training.
+This app tracks training sessions, rolls you had during that session, as well as technique progression.
 
 ------------------------------------------------------------------------
 
 # Tech Stack
 
-Backend - Java - Spring Boot - Maven
+Frontend - HTML/CSS/JavaScript (Vite React)
 
-Database - MySQL
+Backend - Maven - Java (Spring Boot)
 
-Frontend - HTML/CSS/JavaScript (or React depending on version)
+Database - MySQL (MySQL Workbench)
 
 ------------------------------------------------------------------------
 
-# Prerequisites
+# Dependencies
 
-Install the following:
+Install the following dependencies:
 
 -   Java 17
 -   Maven
@@ -27,28 +27,67 @@ Install the following:
 
 ------------------------------------------------------------------------
 
+# Architecture
+ 
+ /bjj-progress-tracker
+
+The "bjj-progress-tracker" file is the overall root directory of the entire project (including both front-end and back-end)
+
+ /bjj-progress-tracker/bjj-frontend
+
+The "bjj-frontend" file is the root directory of the front-end (vite-react) web application client project
+
+ /bjj-progress-tracker/demo
+
+The "demo" file is the root directory of the back-end java (spring-boot) server project 
+
+------------------------------------------------------------------------
+
 # Quick Start
 
 ## 1 Clone the Repository
 
-    git clone https://github.com/<your-username>/<repo-name>.git
-    cd <repo-name>
+    git clone https://github.com/mwwedeking/bjj-progress-tracker
+    cd bjj-progress-tracker
+
+Clone the repository and change to root directory
 
 ------------------------------------------------------------------------
 
-## 2 Setup Database
+## 2 Setup Database 
 
-    CREATE DATABASE bjj_progress;
-    CREATE USER 'bjj_user'@'localhost' IDENTIFIED BY 'bjj_password';
-    GRANT ALL PRIVILEGES ON bjj_progress.* TO 'bjj_user'@'localhost';
+ db_creation.sql
+ sample_data.sql
 
-Run SQL scripts provided in the repository to create tables.
+Run SQL scripts provided in the repository to create database and tables
+
+------------------------------------------------------------------------
+
+## 3 Set-up Environment Variables
+
+ /bjj-frontend/.env
+
+Create a .env file in the front-end
+ 
+ VITE_URL="http://localhost:8080"
+
+Add the VITE_URL environment variable and set it to localhost with desired port
+ 
+ /demo/.env
+
+Create a .env file in the back-end
+ 
+ URL="database-link-goes-here"
+ USER="root"
+ PASS="database-password-goes-here"
+
+Create the URL, USER, and PASS variables and set them accordingly
 
 ------------------------------------------------------------------------
 
 ## 3 Run Backend
 
-    cd backend
+    cd demo
     mvn clean package
     mvn spring-boot:run
 
@@ -60,25 +99,17 @@ Backend runs at:
 
 ## 4 Run Frontend
 
-    cd frontend
+    cd bjj-frontend
     npm install
-    npm start
+    npm run dev
 
-Frontend usually runs at:
+Frontend runs at:
 
-    http://localhost:3000
+    http://localhost:5173
 
 ------------------------------------------------------------------------
 
 # Verify Installation
-
-Backend health check:
-
-    http://localhost:8080/actuator/health
-
-Test API:
-
-    http://localhost:8080/api/techniques
 
 If the frontend loads and data appears, the setup succeeded.
 

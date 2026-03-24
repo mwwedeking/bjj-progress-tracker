@@ -1,5 +1,7 @@
--- schema.sql
+-- This file contains the SQL statements to create the database schema for the BJJ Progress Tracker application. 
+-- It defines the necessary tables and their relationships to store information about techniques, sessions, and rolls.
 
+-- schema.sql
 CREATE DATABASE IF NOT EXISTS bjj_progress_tracker;
 USE bjj_progress_tracker;
 
@@ -35,14 +37,15 @@ CREATE TABLE IF NOT EXISTS rolls (
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 
+-- THIS OBJECT/FEATURE IS CURRENTLY DISABLED.
 -- Link table between rolls and techniques with counters for subs and taps
-CREATE TABLE IF NOT EXISTS roll_technique_links (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  roll_id BIGINT NOT NULL,
-  technique_id BIGINT NOT NULL,
-  count INT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY ux_roll_technique (roll_id, technique_id),
-  FOREIGN KEY (roll_id) REFERENCES rolls(id) ON DELETE CASCADE,
-  FOREIGN KEY (technique_id) REFERENCES techniques(id) ON DELETE CASCADE
-);
+-- CREATE TABLE IF NOT EXISTS roll_technique_links (
+--   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+--   roll_id BIGINT NOT NULL,
+--   technique_id BIGINT NOT NULL,
+--   count INT DEFAULT 0,
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--   UNIQUE KEY ux_roll_technique (roll_id, technique_id),
+--   FOREIGN KEY (roll_id) REFERENCES rolls(id) ON DELETE CASCADE,
+--   FOREIGN KEY (technique_id) REFERENCES techniques(id) ON DELETE CASCADE
+-- );
